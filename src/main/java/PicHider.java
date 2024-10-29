@@ -10,9 +10,10 @@ public class PicHider {
 
 	public static void main(String[] args) throws IOException {
 
-//		Encoder encoder = new Encoder();
-//		encoder.encode();
+		Encoder encoder = new Encoder();
+		encoder.encode();
 
+		System.out.println("----------------------------------------------------------------------");
 		Decoder decoder = new Decoder();
 		decoder.decode();
 

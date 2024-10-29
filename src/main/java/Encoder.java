@@ -1,9 +1,10 @@
+import utils.SecureEncoder;
+
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 /**
  * 多比特填充
@@ -31,28 +32,32 @@ public class Encoder {
 		int height = image.getHeight();
 		System.out.printf("图片尺寸: width=%d, height=%d\n", width, height);
 		String data = "Hello World!------------------";
-		String fileSuffix = "txt";
 		// 将字符串转换为字节数组
 		byte[] dataBytes0 = data.getBytes();
-		// 计算新数组的大小
-		int newDataLength = 1 + 4 + 4 + dataBytes0.length;
+
+		String fileName = "测试文件aaa1.txt";
+		// 【描述信息】文件长度,文件名
+		String profile = String.format("%s,%s", dataBytes0.length, fileName);
+		byte[] encryptBytes = SecureEncoder.encrypt(profile);
+		System.out.println(new String(encryptBytes));
+		System.out.printf("描述信息长度=%s%n", encryptBytes.length);
+
+		// 计算新数组的大小。组成：1个字节魔数“l”, 4个字节描述信息长度，n个字节描述信息，n个字节文件长度
+		int newDataLength = (1 + 4 + encryptBytes.length) + dataBytes0.length;
 		// 创建新的字节数组
 		dataBytes = new byte[newDataLength];
-		// 魔数。字符“l”
-		dataBytes[0] = (byte) 'l';
-		// 文件类型
-		byte[] fileSuffixBytes = fileSuffix.getBytes();
-		System.arraycopy(fileSuffixBytes, 0, dataBytes, 1, Math.min(fileSuffixBytes.length, 4));
-		// 文件长度
-		ByteBuffer buffer = ByteBuffer.allocate(4);
-		buffer.putInt(dataBytes0.length);
-		buffer.flip(); // 准备读取
-		buffer.get(dataBytes, 5, 4);
-		// 文件内容
-		System.arraycopy(dataBytes0, 0, dataBytes, 9, dataBytes0.length);
 
-		// 打印结果以验证
-		System.out.println(Arrays.toString(dataBytes));
+		// 【魔数】。字符“l”
+		dataBytes[0] = (byte) 'l';
+		// 【描述信息-长度】
+		ByteBuffer buffer = ByteBuffer.allocate(4);
+		buffer.putInt(encryptBytes.length);
+		buffer.flip();
+		buffer.get(dataBytes, 1, 4);
+		// 【描述信息】
+		System.arraycopy(encryptBytes, 0, dataBytes, 5, encryptBytes.length);
+		// 【文件内容】
+		System.arraycopy(dataBytes0, 0, dataBytes, (1 + 4 + encryptBytes.length), dataBytes0.length);
 
 		dataByteCursor = 0;
 		dataBitCursor = 1 << 7;
