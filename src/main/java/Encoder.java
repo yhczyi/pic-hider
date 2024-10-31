@@ -3,8 +3,8 @@ import utils.SecureEncoder;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 /**
  * 多比特填充
@@ -16,9 +16,9 @@ public class Encoder {
 
 	@SuppressWarnings("all")
 	String maskBinaryString = "00000000"// alpha
-			+ "00000111" // red
-			+ "00000111" // green
-			+ "00000111" // blue
+			+ "00000000" // red
+			+ "00000000" // green
+			+ "11111111" // blue
 			;
 	int mask = Integer.parseInt(maskBinaryString, 2);
 	int dataByteCursor = 0;
@@ -31,33 +31,60 @@ public class Encoder {
 		int width = image.getWidth();
 		int height = image.getHeight();
 		System.out.printf("图片尺寸: width=%d, height=%d\n", width, height);
-		String data = "Hello World!------------------";
-		// 将字符串转换为字节数组
-		byte[] dataBytes0 = data.getBytes();
+		// 需要隐写的文件
+		File file = new File("C:\\Users\\Administrator\\Desktop\\ctf\\test\\data.txt");
+//		File file = new File("C:\\Users\\Administrator\\Desktop\\ctf\\test\\data.zip");
+		// 获取文件名
+		String fileName = file.getName();
+		long fileSize = file.length();
 
-		String fileName = "测试文件aaa1.txt";
 		// 【描述信息】文件长度,文件名
-		String profile = String.format("%s,%s", dataBytes0.length, fileName);
+		String profile = String.format("%s,%s", fileSize, fileName);
 		byte[] encryptBytes = SecureEncoder.encrypt(profile);
-		System.out.println(new String(encryptBytes));
-		System.out.printf("描述信息长度=%s%n", encryptBytes.length);
+		System.out.printf("【描述信息】长度=%s%n", encryptBytes.length);
+		System.out.printf("【描述信息】=%s%n", profile);
 
-		// 计算新数组的大小。组成：1个字节魔数“l”, 4个字节描述信息长度，n个字节描述信息，n个字节文件长度
-		int newDataLength = (1 + 4 + encryptBytes.length) + dataBytes0.length;
-		// 创建新的字节数组
-		dataBytes = new byte[newDataLength];
+		// 组成：1个字节魔数“l”, 4个字节描述信息长度，n个字节描述信息
+		int headerByteSize = (1 + 4 + encryptBytes.length);
+
+		// 计算图片可以隐藏的文件大小
+		int canHiddenLen = image.getHeight() * image.getWidth();
+		//// 掩码中可以分配出多少个bit用于存储数据
+		int bitCount = (int) maskBinaryString.chars().filter(ch -> ch == '1').count();
+		canHiddenLen = canHiddenLen * bitCount;
+		canHiddenLen = (canHiddenLen + 7) / 8 - headerByteSize;
+		System.out.printf("头长度=%s, 掩码数据位数量=%s, 数据文件大小=%s, 可以隐藏文件大小=%s%n", headerByteSize, bitCount, fileSize, canHiddenLen);
+		if (canHiddenLen < fileSize) {
+			System.err.println("无法进行隐藏");
+//			System.exit(1);
+		}
+
+		// 计算新数组的大小=头长度+n个字节文件长度
+		dataBytes = new byte[headerByteSize + (int) fileSize];
 
 		// 【魔数】。字符“l”
 		dataBytes[0] = (byte) 'l';
 		// 【描述信息-长度】
-		ByteBuffer buffer = ByteBuffer.allocate(4);
-		buffer.putInt(encryptBytes.length);
-		buffer.flip();
-		buffer.get(dataBytes, 1, 4);
+		int encryptBytesLength = encryptBytes.length;
+		dataBytes[1] = (byte) (encryptBytesLength >>> 24);
+		dataBytes[2] = (byte) (encryptBytesLength >>> 16);
+		dataBytes[3] = (byte) (encryptBytesLength >>> 8);
+		dataBytes[4] = (byte) encryptBytesLength;
 		// 【描述信息】
 		System.arraycopy(encryptBytes, 0, dataBytes, 5, encryptBytes.length);
 		// 【文件内容】
-		System.arraycopy(dataBytes0, 0, dataBytes, (1 + 4 + encryptBytes.length), dataBytes0.length);
+		int offset = headerByteSize;
+		try (FileInputStream fis = new FileInputStream(file)) {
+			int bytesRead;
+			byte[] buffer = new byte[8192];
+			while ((bytesRead = fis.read(buffer)) != -1) {
+				if (offset + bytesRead > dataBytes.length) {
+					throw new IOException("Buffer overflow: dataBytes is not large enough to hold the file content.");
+				}
+				System.arraycopy(buffer, 0, dataBytes, offset, bytesRead);
+				offset += bytesRead;
+			}
+		}
 
 		dataByteCursor = 0;
 		dataBitCursor = 1 << 7;

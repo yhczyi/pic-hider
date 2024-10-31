@@ -3,6 +3,7 @@ import utils.SecureEncoder;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -17,9 +18,9 @@ public class Decoder {
 
 	@SuppressWarnings("all")
 	String maskBinaryString = "00000000"// alpha
-			+ "00000111" // red
-			+ "00000111" // green
-			+ "00000111" // blue
+			+ "00000000" // red
+			+ "00000000" // green
+			+ "11111111" // blue
 			;
 	int mask = Integer.parseInt(maskBinaryString, 2);
 	int dataByteCursor = 0;
@@ -45,7 +46,7 @@ public class Decoder {
 		int height = image.getHeight();
 		System.out.printf("图片尺寸: width=%d, height=%d\n", width, height);
 
-		// 1个模数，4位【描述信息】长度
+		// 1个魔数，4位【描述信息】长度
 		dataBytes = new byte[5];
 
 		dataByteCursor = 0;
@@ -58,9 +59,19 @@ public class Decoder {
 			}
 		}
 
-		System.out.println(new String(dataBytes));
 		int dataStartByte = 1 + 4 + profileLength;
 		System.out.println(new String(dataBytes, dataStartByte, dataByteLength));
+
+		if (fileName != null && !fileName.isEmpty()) {
+			String fileOutputPath = "C:\\Users\\Administrator\\Desktop\\ctf\\test" + File.separator + ("output_" + fileName);
+			try (FileOutputStream fos = new FileOutputStream(fileOutputPath, false)) {
+				// 将字节数组写入文件，追加模式
+				fos.write(dataBytes, dataStartByte, dataByteLength);
+				System.out.println("解析出数据已成功追加到文件: " + fileOutputPath);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	private void extractBits(int rgb) {
@@ -108,7 +119,7 @@ public class Decoder {
 	/**
 	 * 扩充 dataBytes 数组长度
 	 *
-	 * @param growLength
+	 * @param growLength 扩充长度
 	 */
 	private void growArray(int growLength) {
 		byte[] newArray = new byte[dataBytes.length + growLength];
