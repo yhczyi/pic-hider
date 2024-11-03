@@ -16,19 +16,13 @@ import java.util.Arrays;
  */
 public class Decoder {
 
-	@SuppressWarnings("all")
-	String maskBinaryString = "00000000"// alpha
-			+ "00000000" // red
-			+ "00000000" // green
-			+ "11111111" // blue
-			;
-	int mask = Integer.parseInt(maskBinaryString, 2);
+	int mask = 0;
 	int dataByteCursor = 0;
 	int dataBitCursor = 1 << 7;
 	// 要存放的数据
 	byte[] dataBytes = null;
 	/**
-	 * 解析出的【描述信息】长度
+	 * 解析出的描述信息长度
 	 */
 	int profileLength = 0;
 	/**
@@ -40,13 +34,19 @@ public class Decoder {
 	 */
 	String fileName = null;
 
-	public void decode() throws IOException {
-		BufferedImage image = ImageIO.read(new File("C:\\Users\\Administrator\\Desktop\\ctf\\test\\8-8-无色-加密后.png"));
+	public void decode(CommandLineArgs.DecodeArgs decode) throws IOException {
+		File dataImg = new File(decode.dataImg);
+		if (!dataImg.exists()) {
+			System.out.printf("文件不存在 %s%n", decode.dataImg);
+			return;
+		}
+		mask = Integer.parseInt(decode.mask, 2);
+		BufferedImage image = ImageIO.read(dataImg);
 		int width = image.getWidth();
 		int height = image.getHeight();
 		System.out.printf("图片尺寸: width=%d, height=%d\n", width, height);
 
-		// 1个魔数，4位【描述信息】长度
+		// 1个魔数，4位描述信息长度
 		dataBytes = new byte[5];
 
 		dataByteCursor = 0;
@@ -63,11 +63,14 @@ public class Decoder {
 		System.out.println(new String(dataBytes, dataStartByte, dataByteLength));
 
 		if (fileName != null && !fileName.isEmpty()) {
-			String fileOutputPath = "C:\\Users\\Administrator\\Desktop\\ctf\\test" + File.separator + ("output_" + fileName);
-			try (FileOutputStream fos = new FileOutputStream(fileOutputPath, false)) {
+			String output = decode.output;
+			output = (output == null || output.trim().isEmpty()) ? null : output.trim();
+			File file = new File(output, "output_" + fileName);
+			boolean flag = file.getParentFile() != null && file.getParentFile().mkdirs();
+			try (FileOutputStream fos = new FileOutputStream(file, false)) {
 				// 将字节数组写入文件，追加模式
 				fos.write(dataBytes, dataStartByte, dataByteLength);
-				System.out.println("解析出数据已成功追加到文件: " + fileOutputPath);
+				System.out.println("解析出数据已成功写入到文件: " + file.getAbsolutePath());
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
@@ -96,18 +99,18 @@ public class Decoder {
 		if (dataBitCursor == 0) {
 			dataBitCursor = 1 << 7;
 			dataByteCursor++;
-			// 解析出【描述信息】长度
+			// 解析出描述信息长度
 			if (dataByteCursor == 5) {
 				profileLength = ByteBuffer.wrap(dataBytes, 1, 4).getInt();
-				System.out.printf("解析出【描述信息】长度=%s%n", profileLength);
+				System.out.printf("解析出描述信息长度=%s%n", profileLength);
 				this.growArray(profileLength);
 			}
-			// 解析出【描述信息】
+			// 解析出描述信息
 			if (profileLength > 0) {
 				if (dataByteCursor == profileLength + 5) {
 					byte[] bytes = Arrays.copyOfRange(dataBytes, 5, profileLength + 5);
 					String decrypt = SecureEncoder.decrypt(bytes);
-					System.out.printf("解析出【描述信息】=%s%n", decrypt);
+					System.out.printf("解析出描述信息=%s%n", decrypt);
 					dataByteLength = Integer.parseInt(decrypt.split(",")[0]);
 					fileName = decrypt.split(",")[1];
 					this.growArray(dataByteLength);
