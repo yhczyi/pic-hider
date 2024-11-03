@@ -14,7 +14,7 @@ import java.io.IOException;
  */
 public class Encoder {
 
-	int mask = 0;
+	long mask = 0;
 	int dataByteCursor = 0;
 	int dataBitCursor = 1 << 7;
 	// 要存放的数据
@@ -27,7 +27,7 @@ public class Encoder {
 			return;
 		}
 		final String maskBinaryStr = encode.mask;
-		mask = Integer.parseInt(maskBinaryStr, 2);
+		mask = Long.parseLong(maskBinaryStr, 2);
 		BufferedImage image = ImageIO.read(imgFile);
 		int width = image.getWidth();
 		int height = image.getHeight();
@@ -57,7 +57,9 @@ public class Encoder {
 		int bitCount = (int) maskBinaryStr.chars().filter(ch -> ch == '1').count();
 		canHiddenLen = canHiddenLen * bitCount;
 		canHiddenLen = (canHiddenLen + 7) / 8 - headerByteSize;
-		System.out.printf("头长度=%s, 掩码数据位数量=%s, 数据文件大小=%s, 可以隐藏文件大小=%s%n", headerByteSize, bitCount, fileSize, canHiddenLen);
+		// 转换成兆字节
+		double megaBytes = canHiddenLen / (1024.0 * 1024.0);
+		System.out.printf("头长度=%s, 掩码数据位数量=%s, 数据文件大小=%s, 可以隐藏文件大小=%s (%.2fMB)%n", headerByteSize, bitCount, fileSize, canHiddenLen, megaBytes);
 		if (canHiddenLen < fileSize) {
 			System.err.println("无法进行隐藏");
 			System.exit(1);
@@ -111,17 +113,19 @@ public class Encoder {
 		int bitMask = 1 << 31;
 		for (int i = 0; i < 32; i++) {
 			if ((mask & bitMask) != 0) {
-				boolean bit = get1Bit();
-				rgb = setBit(rgb, bitMask, bit);
+				Boolean bit = get1Bit();
+				if (bit != null) {
+					rgb = setBit(rgb, bitMask, bit);
+				}
 			}
 			bitMask >>>= 1;
 		}
 		return rgb;
 	}
 
-	public boolean get1Bit() {
+	public Boolean get1Bit() {
 		if (dataByteCursor >= dataBytes.length) {
-			return true;
+			return null;
 		}
 		int num = dataBytes[dataByteCursor];
 		int dataBitMask = dataBitCursor;

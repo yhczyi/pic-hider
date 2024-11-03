@@ -16,7 +16,7 @@ import java.util.Arrays;
  */
 public class Decoder {
 
-	int mask = 0;
+	long mask = 0;
 	int dataByteCursor = 0;
 	int dataBitCursor = 1 << 7;
 	// 要存放的数据
@@ -40,7 +40,7 @@ public class Decoder {
 			System.out.printf("文件不存在 %s%n", decode.dataImg);
 			return;
 		}
-		mask = Integer.parseInt(decode.mask, 2);
+		mask = Long.parseLong(decode.mask, 2);
 		BufferedImage image = ImageIO.read(dataImg);
 		int width = image.getWidth();
 		int height = image.getHeight();
@@ -60,7 +60,7 @@ public class Decoder {
 		}
 
 		int dataStartByte = 1 + 4 + profileLength;
-		System.out.println(new String(dataBytes, dataStartByte, dataByteLength));
+//		System.out.println(new String(dataBytes, dataStartByte, dataByteLength));
 
 		if (fileName != null && !fileName.isEmpty()) {
 			String output = decode.output;
