@@ -5,28 +5,28 @@ import java.io.IOException;
 public class PicHiderTest {
 
 	@SuppressWarnings("all")
-	public static final String MASK_BINARY_STRING = "00001111"// alpha
-			+ "00001111" // red
-			+ "00001111" // green
-			+ "00001111" // blue
+	public static final String MASK_BINARY_STRING = "00001111" // Alpha Channel Mask
+			+ "00001111" // Red Channel Mask
+			+ "00001111" // Green Channel Mask
+			+ "00001111" // Blue Channel Mask
 			;
 
 	@Test
 	public void mainTest() throws IOException {
 
-		final String outputDataImg = "C:\\Users\\Administrator\\Desktop\\tmp\\PicHiderTest\\8-8-无色-加密后.png";
+		final String outputDataImg = "C:\\Users\\Administrator\\Desktop\\PicHiderTest\\8-8-无色-嵌入后.png";
 
 		String[] encodeArgs = new String[]{"encode" //
-				, "--dataFile", "C:\\Users\\Administrator\\Desktop\\tmp\\PicHiderTest\\data.txt" //
-				, "--img", "C:\\Users\\Administrator\\Desktop\\tmp\\PicHiderTest\\8-8-无色.png" //
-				, "--output", outputDataImg //
+				, "--dataFile", "C:\\Users\\Administrator\\Desktop\\PicHiderTest\\data.txt" //
+				, "--coverImage", "C:\\Users\\Administrator\\Desktop\\PicHiderTest\\8-8-无色.png" //
+				, "--stegoImage", outputDataImg //
 				, "--mask", MASK_BINARY_STRING //
 		};
 		PicHider.main(encodeArgs);
 
 		String[] decodeArgs = new String[]{"decode" //
-				, "--dataImg", outputDataImg //
-				, "--output", "C:\\Users\\Administrator\\Desktop\\tmp\\PicHiderTest" //
+				, "--stegoImage", outputDataImg //
+				, "--output", "C:\\Users\\Administrator\\Desktop\\PicHiderTest" //
 				, "--mask", MASK_BINARY_STRING //
 		};
 		PicHider.main(decodeArgs);

@@ -7,7 +7,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 
 /**
- * 多比特填充
+ * 嵌入（将一个文件或信息隐藏到一张图片）
  *
  * @author lichunming
  * @date 2024/10/26 10:46
@@ -21,9 +21,9 @@ public class Encoder {
 	byte[] dataBytes = null;
 
 	public void encode(CommandLineArgs.EncodeArgs encode) throws IOException {
-		File imgFile = new File(encode.img);
+		File imgFile = new File(encode.coverImage);
 		if (!imgFile.exists()) {
-			System.out.printf("文件不存在 %s%n", encode.img);
+			System.out.printf("文件不存在 %s%n", encode.coverImage);
 			return;
 		}
 		final String maskBinaryStr = encode.mask;
@@ -59,7 +59,7 @@ public class Encoder {
 		canHiddenLen = (canHiddenLen + 7) / 8 - headerByteSize;
 		// 转换成兆字节
 		double megaBytes = canHiddenLen / (1024.0 * 1024.0);
-		System.out.printf("头长度=%s, 掩码数据位数量=%s, 数据文件大小=%s, 可以隐藏文件大小=%s (%.2fMB)%n", headerByteSize, bitCount, fileSize, canHiddenLen, megaBytes);
+		System.out.printf("头长度=%s, 掩码数据位数量=%s, 数据文件大小=%s, 可以隐藏文件大小=%s字节  (%.2fMB)%n", headerByteSize, bitCount, fileSize, canHiddenLen, megaBytes);
 		if (canHiddenLen < fileSize) {
 			System.err.println("无法进行隐藏");
 			System.exit(1);
@@ -103,7 +103,7 @@ public class Encoder {
 			}
 		}
 
-		File output = new File(encode.output);
+		File output = new File(encode.stegoImage);
 		boolean flag = output.getParentFile() != null && output.getParentFile().mkdirs();
 		ImageIO.write(image, "png", output);
 		System.out.println("写入完成！已成功写入到文件: " + output.getAbsolutePath());

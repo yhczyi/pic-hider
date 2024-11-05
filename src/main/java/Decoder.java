@@ -9,7 +9,7 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 /**
- * 提取图片中隐藏数据
+ * 提取（从隐写图像中恢复出原来被隐藏的文件或信息）
  *
  * @author lichunming
  * @date 2024/10/27 11:05
@@ -35,9 +35,9 @@ public class Decoder {
 	String fileName = null;
 
 	public void decode(CommandLineArgs.DecodeArgs decode) throws IOException {
-		File dataImg = new File(decode.dataImg);
+		File dataImg = new File(decode.stegoImage);
 		if (!dataImg.exists()) {
-			System.out.printf("文件不存在 %s%n", decode.dataImg);
+			System.out.printf("文件不存在 %s%n", decode.stegoImage);
 			return;
 		}
 		mask = Long.parseLong(decode.mask, 2);
