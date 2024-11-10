@@ -2,7 +2,7 @@
 
 [![Status: Updating](https://img.shields.io/badge/status-updating-brightgreen.svg)](https://github.com/yhczyi/pic-hider)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Build Status](https://travis-ci.org/yhczyi/pic-hider.svg?branch=master)](https://travis-ci.org/yhczyi/pic-hider)
+![Build Status](https://github.com/yhczyi/pic-hider/actions/workflows/compile.yml/badge.svg)
 [![Visitors](https://visitor-badge.laobi.icu/badge?page_id=yhczyi.pic-hider)](https://github.com/yhczyi/pic-hider)
 
 ## 介绍
@@ -27,6 +27,11 @@
 - [操作示例](#操作示例)
 
 ## 安装
+
+- [Git](https://git-scm.com/)
+- [Java17](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
+- [Maven](http://maven.apache.org/)
+
 ```bash
    git clone https://github.com/yhczyi/pic-hider.git
    cd pic-hider
