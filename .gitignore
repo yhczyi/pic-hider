@@ -1,0 +1,13 @@
+# 构建输出
+[Bb]in/
+[Oo]bj/
+
+# Visual Studio 用户文件
+.vs/
+*.user
+*.suo
+
+# 测试与运行产物
+TestResults/
+/output/
+.pic-hider/
