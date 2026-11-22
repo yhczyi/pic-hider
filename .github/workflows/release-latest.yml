@@ -1,0 +1,83 @@
+name: Release Latest
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-latest
+  cancel-in-progress: false
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Publish GUI (win-x64)
+        shell: pwsh
+        run: >
+          dotnet publish src/PicHider.App/PicHider.App.csproj
+          -c Release -r win-x64 --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:EnableCompressionInSingleFile=true
+          -p:DebugType=None
+          -o output/publish/gui
+
+      - name: Publish CLI (win-x64)
+        shell: pwsh
+        run: >
+          dotnet publish src/PicHider.Cli/PicHider.Cli.csproj
+          -c Release -r win-x64 --self-contained true
+          -p:PublishSingleFile=true
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:EnableCompressionInSingleFile=true
+          -p:DebugType=None
+          -o output/publish/cli
+
+      - name: Stage artifacts
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path output/releases | Out-Null
+          Copy-Item output/publish/gui/PicHider.App.exe output/releases/PicHider-gui-win-x64.exe -Force
+          Copy-Item output/publish/cli/PicHider.Cli.exe output/releases/PicHider-cli-win-x64.exe -Force
+          Get-ChildItem output/releases/*.exe | ForEach-Object { "{0}  {1:N1} MB" -f $_.Name, ($_.Length / 1MB) }
+
+      - name: Delete previous latest release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release delete latest --yes --cleanup-tag 2>/dev/null || true
+
+      - name: Publish latest release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BUILD_TIME=$(date -u -d '+8 hours' '+%Y-%m-%d %H:%M')
+          COMMIT_MSG=$(git log -1 --pretty=%s)
+          COMMIT_COUNT=$(git rev-list --count HEAD)
+          gh release create latest output/releases/*.exe \
+            --target "$GITHUB_SHA" \
+            --title "Latest Auto-Build" \
+            --notes "由 master 自动构建（$BUILD_TIME）
+
+          > Commit: $GITHUB_SHA
+          > Commit Message: $COMMIT_MSG
+          > Total Commits: $COMMIT_COUNT
+          > Triggered by: $GITHUB_ACTOR" \
+            --latest
